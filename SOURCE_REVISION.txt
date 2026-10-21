@@ -1,0 +1,10 @@
+TOMOCA Reads — Vercel + Supabase + Stripe release
+Converted: 2026-10-20
+
+Target runtime: Vercel native Next.js
+Persistent database: Supabase PostgreSQL
+Billing: Stripe Checkout + signed webhooks + Customer Portal
+Branch QR validity: one Addis Ababa calendar day
+Reader session validity: 30 minutes per scan
+Customers: free, no account required
+Business/admin: subscription-gated access service

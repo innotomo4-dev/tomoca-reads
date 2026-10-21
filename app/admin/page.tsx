@@ -1,0 +1,1 @@
+import {isAdmin} from '../../lib/server';import Manage from './manage';import AdminLogin from './login';export const dynamic='force-dynamic';export const metadata={robots:{index:false,follow:false}};async function Protected(){return await isAdmin()?<Manage/>:<AdminLogin/>;}export default function Page(){return <Protected/>;}

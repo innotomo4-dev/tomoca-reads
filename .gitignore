@@ -1,0 +1,43 @@
+# Environment secrets
+.env
+.env.local
+.env.production
+.env.production.local
+.env.development.local
+.env*.local
+.env.selfhosted
+!.env.example
+!.env.selfhosted.example
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.*
+
+# Next.js
+.next/
+out/
+/.vercel/
+
+# Old SQLite files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+data/*.sqlite*
+
+# Legacy builds
+dist-selfhosted/
+build/
+.sites-runtime/
+.wrangler/
+.vinext/
+
+# Logs & build info
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+.DS_Store
+*.pem
