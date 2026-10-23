@@ -37,13 +37,14 @@ Supabase PostgreSQL       Stripe
 
 Create a Supabase project. The free plan is suitable for development/pilot use.
 
-Open **Supabase Dashboard → SQL Editor**, paste the complete contents of:
+Open **Supabase Dashboard → SQL Editor**, run these migrations in order:
 
 ```
 supabase/migrations/001_tomoca_reads.sql
+supabase/migrations/002_multi_admin_invitations.sql
 ```
 
-and run it once.
+Existing deployments that already ran migration 001 only need to run migration 002.
 
 The migration creates:
 
@@ -58,6 +59,7 @@ The migration creates:
 - `daily_branch_metrics`
 - `story_overrides`
 - `system_locks`
+- `admin_invitations`
 - atomic SQL functions for metrics, login throttling, cleanup, and refresh locking
 
 RLS is enabled and no anonymous/authenticated database policies are created. The browser never receives the Supabase secret key; database access occurs only through server-side Next.js route handlers.
@@ -137,7 +139,22 @@ pnpm dev
 
 Open `http://localhost:3000/admin`.
 
-If there is no administrator account yet, the admin page displays the initial activation form. Enter the `ADMIN_SETUP_TOKEN`, administrator email, and a password of at least 14 characters. The activation token cannot create another administrator once the primary account exists.
+If there is no administrator account yet, the admin page displays the initial activation form. Enter the `ADMIN_SETUP_TOKEN`, administrator email, and a password of at least 14 characters. The setup token creates only the first administrator. Additional administrators are invited from the authenticated admin dashboard with one-time 48-hour activation links.
+
+
+## Additional administrators
+
+After the first administrator signs in, open **Administrator access** in `/admin`. Enter the new administrator email and choose **Create administrator invitation**. The application returns a one-time link such as:
+
+```
+https://YOUR-DOMAIN/admin/activate?token=...
+```
+
+Send that link directly to the intended administrator. The raw token is never stored in Supabase; only its SHA-256 digest is stored. The link expires after 48 hours and is marked used atomically when the administrator chooses a password. Reissuing an invitation invalidates the previous pending link for that email.
+
+If the email already exists in `admin_accounts`, consuming the invitation securely resets that administrator's password and invalidates their existing admin sessions. This is useful when migrating a manually-created second administrator.
+
+All administrators sign in at `/admin` using their own email and password. Login lookup is by normalized email rather than the legacy hard-coded `primary` account.
 
 ## 5. GitHub
 

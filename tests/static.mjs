@@ -15,10 +15,20 @@ check('daily QR uses Addis day',server.includes('addisDay()')&&server.includes('
 check('subscription gates QR',server.includes('requireActiveSubscription'));
 check('subscription gates scans',server.includes('billing.active?data:null'));
 const sql=read('supabase/migrations/001_tomoca_reads.sql');
+const adminSql=read('supabase/migrations/002_multi_admin_invitations.sql');
 check('branch/day uniqueness',sql.includes('unique(branch,day)'));
 check('RLS enabled',sql.includes('enable row level security'));
 check('atomic login limiter',sql.includes('increment_login_attempt'));
 check('durable aggregate metric',sql.includes('daily_branch_metrics'));
+
+check('multi-admin invitation table',adminSql.includes('admin_invitations'));
+check('atomic invitation activation',adminSql.includes('activate_admin_invitation'));
+check('invitation tokens stored as digests',read('app/api/admin-invitations/route.ts').includes('await digest(rawToken)'));
+check('48-hour administrator invitations',read('app/api/admin-invitations/route.ts').includes('48*60*60*1000'));
+check('email-based administrator login',read('app/api/admin-auth/route.ts').includes('adminByEmail(email)'));
+check('activation route creates unique admin session',read('app/api/admin-activate/route.ts').includes('activate_admin_invitation')&&read('app/api/admin-activate/route.ts').includes('admin_sessions'));
+check('additional-admin activation page',fs.existsSync(path.join(root,'app/admin/activate/page.tsx')));
+
 const webhook=read('app/api/stripe/webhook/route.ts');
 check('signed Stripe webhook verification',webhook.includes('constructEvent'));
 check('Stripe events scoped to TOMOCA organization',webhook.includes("session.metadata?.organization_id!=='tomoca'")&&read('lib/billing.ts').includes("subscription.metadata?.organization_id!=='tomoca'"));

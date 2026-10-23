@@ -1,17 +1,16 @@
-import {adminAccount,passwordHash,digest,equal,sessionToken,ADMIN_COOKIE,PASSWORD_ITERATIONS} from '../../../lib/admin-auth';
+import {adminByEmail,anyAdminAccount,currentAdmin,passwordHash,digest,equal,sessionToken,adminCookieHeader,ADMIN_COOKIE,PASSWORD_ITERATIONS} from '../../../lib/admin-auth';
 import {supabaseAdmin} from '../../../lib/supabase-server';
 import {clientAddress,sameOrigin} from '../../../lib/security';
 import {config,requireStrongHex} from '../../../lib/config';
 import {isAdmin} from '../../../lib/server';
 export const dynamic='force-dynamic';
 const json=(v:unknown,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
-const cookie=(token:string,maxAge:number)=>`${ADMIN_COOKIE}=${token}; HttpOnly; ${process.env.NODE_ENV==='production'?'Secure; ':''}SameSite=Strict; Path=/; Max-Age=${maxAge}`;
 
 export async function GET(){
   try{
-    const account=await adminAccount();
-    const authenticated=await isAdmin();
-    return json({configured:!!account,authenticated,email:authenticated?account?.email||null:null});
+    const configured=!!await anyAdminAccount();
+    const account=await currentAdmin();
+    return json({configured,authenticated:!!account,email:account?.email||null,accountId:account?.id||null});
   }catch(error){console.error(error);return json({error:'Administrator status is temporarily unavailable.'},503);}
 }
 
@@ -24,14 +23,14 @@ export async function POST(req:Request){
     if(body.action==='logout'){
       const cookieValue=req.headers.get('cookie')?.match(new RegExp(`(?:^|;\\s*)${ADMIN_COOKIE.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}=([^;]+)`))?.[1];
       if(cookieValue)await db.from('admin_sessions').delete().eq('id',await digest(cookieValue));
-      return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json','Cache-Control':'no-store','Set-Cookie':cookie('',0)}});
+      return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json','Cache-Control':'no-store','Set-Cookie':adminCookieHeader('',0)}});
     }
 
     const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');
     if(email.length>254||password.length>256)return json({error:'Invalid credentials.'},400);
 
     if(body.action==='setup'){
-      const existing=await adminAccount();
+      const existing=await anyAdminAccount();
       if(existing)return json({error:'An administrator login already exists.'},409);
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<14)return json({error:'Use a valid email and a password of at least 14 characters.'},400);
       const expected=requireStrongHex('ADMIN_SETUP_TOKEN',config.adminSetupToken());
@@ -55,21 +54,21 @@ export async function POST(req:Request){
       if(Number(attempt.data||0)>8)return json({error:'Too many sign-in attempts. Please try again in 15 minutes.'},429);
     }
 
-    const account=await adminAccount();
-    const iterations=Number(account?.password_iterations||100000);
+    const account=await adminByEmail(email);
+    const iterations=Number(account?.password_iterations||PASSWORD_ITERATIONS);
     const calculated=await passwordHash(password,account?.salt||'unconfigured-account-salt',iterations);
-    if(!account||!equal(email,account.email)||!equal(calculated,account.password_hash))return json({error:'Email or password is incorrect, or the login has not been activated.'},401);
+    if(!account||!equal(calculated,account.password_hash))return json({error:'Email or password is incorrect, or the login has not been activated.'},401);
 
     if(iterations<PASSWORD_ITERATIONS){
       const salt=sessionToken();
-      const {error}=await db.from('admin_accounts').update({salt,password_hash:await passwordHash(password,salt),password_iterations:PASSWORD_ITERATIONS}).eq('id','primary');
+      const {error}=await db.from('admin_accounts').update({salt,password_hash:await passwordHash(password,salt),password_iterations:PASSWORD_ITERATIONS}).eq('id',account.id);
       if(error)throw new Error('Password migration failed: '+error.message);
     }
     const token=sessionToken();
-    const {error}=await db.from('admin_sessions').insert({id:await digest(token),account_id:'primary',expires:now+8*60*60*1000});
+    const {error}=await db.from('admin_sessions').insert({id:await digest(token),account_id:account.id,expires:now+8*60*60*1000});
     if(error)throw new Error('Admin session creation failed: '+error.message);
     await db.from('admin_sessions').delete().lt('expires',now);
     await db.from('admin_login_attempts').delete().lt('expires',now);
-    return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json','Cache-Control':'no-store','Set-Cookie':cookie(token,8*60*60)}});
+    return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json','Cache-Control':'no-store','Set-Cookie':adminCookieHeader(token,8*60*60)}});
   }catch(error){console.error('Admin authentication unavailable',error);return json({error:'Sign-in is temporarily unavailable. Please try again.'},503);}
 }

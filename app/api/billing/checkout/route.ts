@@ -1,5 +1,5 @@
 import {isAdmin,sameOrigin} from '../../../../lib/server';
-import {adminAccount} from '../../../../lib/admin-auth';
+import {currentAdmin} from '../../../../lib/admin-auth';
 import {billingState,ensureOrganization,stripe,verifiedMonthlyPrice} from '../../../../lib/billing';
 import {config} from '../../../../lib/config';
 import {supabaseAdmin} from '../../../../lib/supabase-server';
@@ -9,7 +9,7 @@ export async function POST(req:Request){
   if(!sameOrigin(req)||!await isAdmin())return json({error:'Administrator access required.'},403);
   try{
     await ensureOrganization();
-    const account=await adminAccount();if(!account)return json({error:'Administrator account is not configured.'},400);
+    const account=await currentAdmin();if(!account)return json({error:'Administrator account is not configured.'},400);
     const state=await billingState();
     if(state.active)return json({error:'The TOMOCA Reads subscription is already active.'},409);
     if(state.subscriptionId&&!['canceled','incomplete_expired'].includes(state.status))return json({error:'An existing Stripe subscription needs attention. Use Manage subscription instead of starting another one.'},409);

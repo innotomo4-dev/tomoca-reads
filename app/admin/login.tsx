@@ -1,17 +1,18 @@
 'use client';
+
 import { useEffect, useState } from 'react';
-import { 
-  Lock, 
-  Mail, 
-  KeyRound, 
-  ShieldCheck, 
-  ArrowRight, 
+import {
+  Lock,
+  Mail,
+  KeyRound,
+  ShieldCheck,
+  ArrowRight,
   ArrowLeft,
-  Eye, 
-  EyeOff, 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2, 
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
   Coffee,
   Sparkles
 } from 'lucide-react';
@@ -35,6 +36,10 @@ export default function AdminLogin() {
       .then(r => r.json())
       .then(d => {
         if (d.error) throw new Error(d.error);
+        if (d.authenticated) {
+          window.location.assign('/admin');
+          return;
+        }
         setConfigured(!!d.configured);
       })
       .catch(() => setError('Unable to check administrator setup status.'));
@@ -65,30 +70,30 @@ export default function AdminLogin() {
     }
 
     try {
-      const r = await fetch('/api/admin-auth', {
+      const res = await fetch('/api/admin-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action,
           email: email.trim(),
           password,
-          setupToken: setupToken.trim(),
-        }),
+          setupToken: setupToken.trim()
+        })
       });
-      const d: any = await r.json();
-      if (!r.ok) throw new Error(d.error || 'Authentication failed.');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Authentication request failed.');
 
       if (action === 'setup') {
         setConfigured(true);
-        setMessage('Administrator account successfully created. Please sign in below.');
+        setMessage('Administrator account successfully activated. Please sign in below.');
         setPassword('');
         setConfirm('');
         setSetupToken('');
       } else {
         window.location.assign('/admin');
       }
-    } catch (e: any) {
-      setError(e.message || 'An unexpected error occurred.');
+    } catch (err: any) {
+      setError(err?.message || 'Authentication error.');
     } finally {
       setBusy(false);
     }
@@ -98,38 +103,44 @@ export default function AdminLogin() {
     <div className="admin-auth-page">
       <header className="admin-auth-header">
         <a href="/" className="admin-auth-back-link">
-          <ArrowLeft size={16} />
-          <span>Back to Reading Desk</span>
-        </a>
-        <a href="/" className="brand">
-          <img src="/tomoca-logo.png" alt="TOMOCA Coffee" />
-          <span>reads<span className="brand-dot">.</span></span>
+          <ArrowLeft size={15} />
+          <span>Reading Desk</span>
         </a>
         <div className="admin-auth-header-tag">
-          <Coffee size={14} />
-          <span>Est. 1953 · Addis Ababa</span>
+          <span className="pulse-dot" />
+          <span>Protected Gateway</span>
         </div>
       </header>
 
       <main className="admin-auth-main">
+        <div className="admin-auth-brand-center">
+          <a href="/" className="admin-logo-emblem" title="TOMOCA Coffee Reads">
+            <img src="/tomoca-logo.png" alt="TOMOCA Coffee 1953" className="admin-logo-img" />
+          </a>
+          <div className="admin-auth-brand-title">
+            <span>reads.</span>
+            <span className="brand-dot">•</span>
+          </div>
+        </div>
+
         <div className="admin-auth-card">
           {configured === null ? (
             <div className="admin-auth-loading">
               <div className="loading-spinner-wrap">
-                <Loader2 size={36} className="spin-icon" />
+                <Coffee size={28} className="spin-icon" />
               </div>
               <h2>Connecting to TOMOCA Reads</h2>
-              <p>Verifying secure administration status…</p>
+              <p>Verifying secure administrator configuration…</p>
             </div>
           ) : configured ? (
             <>
               <div className="admin-card-header">
                 <span className="admin-badge">
-                  <ShieldCheck size={14} />
+                  <Lock size={12} />
                   Private Administration
                 </span>
-                <h1>Welcome back</h1>
-                <p>Sign in to manage news editions, daily branch QRs, and subscription billing.</p>
+                <h1>Welcome back.</h1>
+                <p>Sign in to manage news curation, daily café QR tokens, and subscription billing.</p>
               </div>
 
               {message && (
@@ -166,7 +177,9 @@ export default function AdminLogin() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="login-password">Password</label>
+                  <div className="label-with-hint">
+                    <label htmlFor="login-password">Password</label>
+                  </div>
                   <div className="input-wrap">
                     <Lock size={18} className="input-icon" />
                     <input
@@ -176,7 +189,7 @@ export default function AdminLogin() {
                       autoComplete="current-password"
                       required
                       maxLength={256}
-                      placeholder="Enter your master password"
+                      placeholder="Enter your password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       disabled={busy}
@@ -193,7 +206,11 @@ export default function AdminLogin() {
                   </div>
                 </div>
 
-                <button type="submit" className="admin-submit-btn" disabled={busy || !email || !password}>
+                <button
+                  type="submit"
+                  className="admin-submit-btn"
+                  disabled={busy || !email || !password}
+                >
                   {busy ? (
                     <>
                       <Loader2 size={18} className="spin-icon" />
@@ -202,7 +219,7 @@ export default function AdminLogin() {
                   ) : (
                     <>
                       <span>Sign in to Dashboard</span>
-                      <ArrowRight size={18} />
+                      <ArrowRight size={18} className="arrow-icon" />
                     </>
                   )}
                 </button>
@@ -217,11 +234,11 @@ export default function AdminLogin() {
             <>
               <div className="admin-card-header">
                 <span className="admin-badge setup">
-                  <KeyRound size={14} />
+                  <KeyRound size={12} />
                   First-Time Activation
                 </span>
                 <h1>Activate TOMOCA Reads</h1>
-                <p>Create the primary administrator account using your one-time activation token from your environment configuration.</p>
+                <p>Create the primary administrator account using the one-time activation token from your environment configuration.</p>
               </div>
 
               {error && (

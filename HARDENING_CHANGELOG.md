@@ -16,3 +16,14 @@
 12. Added Vercel-compatible daily maintenance, distributed refresh locking, `/healthz`, and `/readyz`.
 
 See `README.md` and `supabase/migrations/001_tomoca_reads.sql` for deployment.
+
+## Multi-administrator update — 2026-10-23
+
+13. Replaced the legacy hard-coded `primary` login lookup with normalized email-based administrator authentication.
+14. Added `admin_invitations` with SHA-256-hashed one-time activation tokens and 48-hour expiry.
+15. Added `/admin/activate` for invited administrators to choose their own password.
+16. Added atomic Supabase invitation consumption; links become unusable immediately after activation.
+17. Existing administrator emails can receive an invitation to securely reset their password; existing sessions are revoked on reset.
+18. Added admin-team listing, invitation creation, copy-link workflow, and invitation revocation to the admin dashboard.
+19. Stripe Checkout now uses the currently authenticated administrator rather than assuming the `primary` account.
+20. Added migration `002_multi_admin_invitations.sql` and extended automated cleanup for expired invitation records.

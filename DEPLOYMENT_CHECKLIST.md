@@ -5,7 +5,7 @@ Use this after extracting the release ZIP.
 ## 1. Supabase
 
 1. Create a Supabase project.
-2. Open **SQL Editor** and run `supabase/migrations/001_tomoca_reads.sql` once.
+2. Open **SQL Editor** and run `supabase/migrations/001_tomoca_reads.sql`, then `supabase/migrations/002_multi_admin_invitations.sql`. If migration 001 is already installed, run only migration 002.
 3. Copy the project URL and the server-only secret key (`sb_secret_...`).
 4. Do **not** expose the secret key in a `NEXT_PUBLIC_*` variable.
 
@@ -63,7 +63,7 @@ The optional retention/RSS settings are documented in `.env.example`.
 
 ## 6. First administrator
 
-Open `/admin`. If no administrator exists, activate it using `ADMIN_SETUP_TOKEN`, an email address, and a password of at least 14 characters. Then sign in.
+Open `/admin`. If no administrator exists, activate the first account using `ADMIN_SETUP_TOKEN`, an email address, and a password of at least 14 characters. Then sign in. To add more administrators, use **Administrator access → Create administrator invitation**, send the generated 48-hour one-time link to the new admin, and have them choose their password at `/admin/activate`.
 
 ## 7. Billing and QR test
 
