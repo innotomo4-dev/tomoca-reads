@@ -35,7 +35,7 @@ export async function GET(req:Request,{params}:{params:Promise<{action:string}>}
         stats:[...totals].map(([branch,sessions])=>({branch,sessions})),
         registrations:{total:registrations.count||0,opted_in:registrations.count||0},
         recentRegistrations:recent.data||[],health:currentEdition.health||[],updated:currentEdition.updated,
-        billing:{amount:20,currency:'USD',status:billing.status,active:billing.active,configured:billing.configured,currentPeriodEnd:billing.currentPeriodEnd,customer:!!billing.customerId,subscription:!!billing.subscriptionId},
+        billing:{amount:25,currency:'USD',status:billing.status,active:billing.active,configured:billing.configured,currentPeriodEnd:billing.currentPeriodEnd,customer:!!billing.customerId,subscription:!!billing.subscriptionId},
         branches,
         operations:{database:'Supabase PostgreSQL',automaticBackups:'Supabase plan dependent',registrationRetentionDays:config.registrationRetentionDays(),overrideRetentionDays:config.overrideRetentionDays(),maintenance:'Daily Vercel cron + on-demand admin maintenance'}
       });
